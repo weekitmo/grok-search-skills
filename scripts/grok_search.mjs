@@ -19,11 +19,11 @@
 import { readKeyFromEnv } from "./utils/readKeyFromEnv.mjs";
 
 function usage(msg) {
-  if (msg) console.error(msg);
-  console.error(
-    "Usage: grok_search.mjs <query> (--web|--x) [--json] [--text|--links-only] [--raw] [--model <id>] [--max <n>] [--days <n>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--handles a,b] [--exclude a,b]"
-  );
-  process.exit(2);
+	if (msg) console.error(msg);
+	console.error(
+		"Usage: grok_search.mjs <query> (--web|--x) [--json] [--text|--links-only] [--raw] [--model <id>] [--max <n>] [--days <n>] [--from YYYY-MM-DD] [--to YYYY-MM-DD] [--handles a,b] [--exclude a,b]",
+	);
+	process.exit(2);
 }
 
 const args = process.argv.slice(2);
@@ -37,10 +37,13 @@ let format = "json"; // json|text|links
 let model = process.env.GROK_MODEL || process.env.XAI_MODEL || "grok-4-1-fast";
 let maxResults = 8;
 const apiBase = (process.env.XAI_BASE_URL || "https://api.x.ai/v1").replace(
-  /\/+$/,
-  ""
+	/\/+$/,
+	"",
 );
-const timeoutMs = Math.max(1000, Number(process.env.XAI_TIMEOUT_MS || 45000) || 45000);
+const timeoutMs = Math.max(
+	1000,
+	Number(process.env.XAI_TIMEOUT_MS || 45000) || 45000,
+);
 const maxRetries = Math.max(0, Number(process.env.XAI_RETRIES || 2) || 2);
 
 // X-search filters
@@ -51,52 +54,52 @@ let handles = []; // array of handles (no @)
 let excludeHandles = [];
 
 for (let i = 0; i < args.length; i++) {
-  const a = args[i];
-  if (a === "--web") mode = "web";
-  else if (a === "--x") mode = "x";
-  else if (a === "--json") jsonOut = true;
-  else if (a === "--raw") rawOut = true;
-  else if (a === "--links-only") format = "links";
-  else if (a === "--text") format = "text";
-  else if (a === "--model") {
-    const v = args[++i];
-    if (!v) usage("Missing value for --model");
-    model = v;
-  } else if (a === "--max") {
-    const v = Number(args[++i]);
-    if (!Number.isFinite(v) || v <= 0) usage("Bad value for --max");
-    maxResults = Math.floor(v);
-  } else if (a === "--days") {
-    const v = Number(args[++i]);
-    if (!Number.isFinite(v) || v <= 0) usage("Bad value for --days");
-    days = Math.floor(v);
-  } else if (a === "--from") {
-    const v = args[++i];
-    if (!v) usage("Missing value for --from");
-    fromDate = v;
-  } else if (a === "--to") {
-    const v = args[++i];
-    if (!v) usage("Missing value for --to");
-    toDate = v;
-  } else if (a === "--handles") {
-    const v = args[++i];
-    if (!v) usage("Missing value for --handles");
-    handles = v
-      .split(",")
-      .map((h) => h.trim().replace(/^@/, ""))
-      .filter(Boolean);
-  } else if (a === "--exclude") {
-    const v = args[++i];
-    if (!v) usage("Missing value for --exclude");
-    excludeHandles = v
-      .split(",")
-      .map((h) => h.trim().replace(/^@/, ""))
-      .filter(Boolean);
-  } else if (a.startsWith("-")) {
-    usage(`Unknown flag: ${a}`);
-  } else {
-    queryParts.push(a);
-  }
+	const a = args[i];
+	if (a === "--web") mode = "web";
+	else if (a === "--x") mode = "x";
+	else if (a === "--json") jsonOut = true;
+	else if (a === "--raw") rawOut = true;
+	else if (a === "--links-only") format = "links";
+	else if (a === "--text") format = "text";
+	else if (a === "--model") {
+		const v = args[++i];
+		if (!v) usage("Missing value for --model");
+		model = v;
+	} else if (a === "--max") {
+		const v = Number(args[++i]);
+		if (!Number.isFinite(v) || v <= 0) usage("Bad value for --max");
+		maxResults = Math.floor(v);
+	} else if (a === "--days") {
+		const v = Number(args[++i]);
+		if (!Number.isFinite(v) || v <= 0) usage("Bad value for --days");
+		days = Math.floor(v);
+	} else if (a === "--from") {
+		const v = args[++i];
+		if (!v) usage("Missing value for --from");
+		fromDate = v;
+	} else if (a === "--to") {
+		const v = args[++i];
+		if (!v) usage("Missing value for --to");
+		toDate = v;
+	} else if (a === "--handles") {
+		const v = args[++i];
+		if (!v) usage("Missing value for --handles");
+		handles = v
+			.split(",")
+			.map((h) => h.trim().replace(/^@/, ""))
+			.filter(Boolean);
+	} else if (a === "--exclude") {
+		const v = args[++i];
+		if (!v) usage("Missing value for --exclude");
+		excludeHandles = v
+			.split(",")
+			.map((h) => h.trim().replace(/^@/, ""))
+			.filter(Boolean);
+	} else if (a.startsWith("-")) {
+		usage(`Unknown flag: ${a}`);
+	} else {
+		queryParts.push(a);
+	}
 }
 
 // default output is JSON (agent-friendly)
@@ -108,60 +111,60 @@ if (!mode) usage("Must specify --web or --x");
 
 const apiKey = readKeyFromEnv();
 if (!apiKey) {
-  console.error(
-    "Missing XAI_API_KEY. Set env var or add env.XAI_API_KEY in ~/.clawdbot/clawdbot.json"
-  );
-  process.exit(1);
+	console.error(
+		"Missing XAI_API_KEY. Set env var or add env.XAI_API_KEY in ~/.clawdbot/clawdbot.json",
+	);
+	process.exit(1);
 }
 
 const toolType = mode === "x" ? "x_search" : "web_search";
 
 function isoDate(d) {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+	const year = d.getFullYear();
+	const month = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${year}-${month}-${day}`;
 }
 
 function computeDateRange() {
-  if (fromDate || toDate) {
-    return {
-      from_date: fromDate || undefined,
-      to_date: toDate || undefined,
-    };
-  }
-  if (days) {
-    const to = new Date();
-    const from = new Date();
-    from.setDate(from.getDate() - days);
-    return { from_date: isoDate(from), to_date: isoDate(to) };
-  }
-  return {};
+	if (fromDate || toDate) {
+		return {
+			from_date: fromDate || undefined,
+			to_date: toDate || undefined,
+		};
+	}
+	if (days) {
+		const to = new Date();
+		const from = new Date();
+		from.setDate(from.getDate() - days);
+		return { from_date: isoDate(from), to_date: isoDate(to) };
+	}
+	return {};
 }
 
 const dateRange = computeDateRange();
 
 // Prefer server-side tool params for X filtering (days/handles/exclude)
 const tools =
-  mode === "x"
-    ? [
-        {
-          type: "x_search",
-          x_search: {
-            ...(dateRange.from_date ? { from_date: dateRange.from_date } : {}),
-            ...(dateRange.to_date ? { to_date: dateRange.to_date } : {}),
-            ...(handles.length ? { allowed_x_handles: handles } : {}),
-            ...(excludeHandles.length
-              ? { excluded_x_handles: excludeHandles }
-              : {}),
-          },
-        },
-      ]
-    : [{ type: "web_search" }];
+	mode === "x"
+		? [
+				{
+					type: "x_search",
+					x_search: {
+						...(dateRange.from_date ? { from_date: dateRange.from_date } : {}),
+						...(dateRange.to_date ? { to_date: dateRange.to_date } : {}),
+						...(handles.length ? { allowed_x_handles: handles } : {}),
+						...(excludeHandles.length
+							? { excluded_x_handles: excludeHandles }
+							: {}),
+					},
+				},
+			]
+		: [{ type: "web_search" }];
 
 // We ask Grok to use the tool, and return strict JSON.
 const prompt = `Use the provided ${toolType} tool to research: ${JSON.stringify(
-  query
+	query,
 )}
 
 Return ONLY valid JSON (no markdown) in this schema:
@@ -190,254 +193,274 @@ Rules:
 - if you cannot find anything, return empty arrays (still valid JSON).`;
 
 const body = {
-  model,
-  input: [
-    {
-      role: "user",
-      content: [{ type: "input_text", text: prompt }],
-    },
-  ],
-  tools,
-  store: false,
-  temperature: 0,
+	model,
+	input: [
+		{
+			role: "user",
+			content: [{ type: "input_text", text: prompt }],
+		},
+	],
+	tools,
+	store: false,
+	temperature: 0,
 };
 
 function isRetryableNetworkError(err) {
-  const code = err?.cause?.code || err?.code;
-  return ["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ENOTFOUND", "ECONNREFUSED"].includes(
-    code
-  );
+	const code = err?.cause?.code || err?.code;
+	return [
+		"ECONNRESET",
+		"ETIMEDOUT",
+		"EAI_AGAIN",
+		"ENOTFOUND",
+		"ECONNREFUSED",
+	].includes(code);
 }
 
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function fetchWithRetry(url, init, retries, perTryTimeoutMs) {
-  let lastErr = null;
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const signal = AbortSignal.timeout(perTryTimeoutMs);
-      return await fetch(url, { ...init, signal });
-    } catch (err) {
-      lastErr = err;
-      const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
-      const shouldRetry = attempt < retries && (timedOut || isRetryableNetworkError(err));
-      if (!shouldRetry) throw err;
-      await sleep(300 * (attempt + 1));
-    }
-  }
-  throw lastErr || new Error("fetch failed");
+	let lastErr = null;
+	for (let attempt = 0; attempt <= retries; attempt++) {
+		try {
+			const signal = AbortSignal.timeout(perTryTimeoutMs);
+			return await fetch(url, { ...init, signal });
+		} catch (err) {
+			lastErr = err;
+			const timedOut =
+				err?.name === "TimeoutError" || err?.name === "AbortError";
+			const shouldRetry =
+				attempt < retries && (timedOut || isRetryableNetworkError(err));
+			if (!shouldRetry) throw err;
+			await sleep(300 * (attempt + 1));
+		}
+	}
+	throw lastErr || new Error("fetch failed");
 }
 
 let res;
 try {
-  res = await fetchWithRetry(
-    `${apiBase}/responses`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(body),
-    },
-    maxRetries,
-    timeoutMs
-  );
+	res = await fetchWithRetry(
+		`${apiBase}/responses`,
+		{
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+			body: JSON.stringify(body),
+		},
+		maxRetries,
+		timeoutMs,
+	);
 } catch (err) {
-  const code = err?.cause?.code || err?.code || "UNKNOWN";
-  console.error(`Network error calling xAI API: ${code} ${err?.message || "fetch failed"}`);
-  console.error(`Target: ${apiBase}/responses`);
-  console.error(
-    "Hint: if direct access to api.x.ai is blocked/reset in your network, use a proxy/VPN, or set XAI_BASE_URL to your reachable gateway."
-  );
-  console.error(
-    "Hint: for env proxy support in Node fetch, set NODE_USE_ENV_PROXY=1 and HTTPS_PROXY/HTTP_PROXY."
-  );
-  process.exit(1);
+	const code = err?.cause?.code || err?.code || "UNKNOWN";
+	console.error(
+		`Network error calling xAI API: ${code} ${err?.message || "fetch failed"}`,
+	);
+	console.error(`Target: ${apiBase}/responses`);
+	console.error(
+		"Hint: if direct access to api.x.ai is blocked/reset in your network, use a proxy/VPN, or set XAI_BASE_URL to your reachable gateway.",
+	);
+	console.error(
+		"Hint: for env proxy support in Node fetch, set NODE_USE_ENV_PROXY=1 and HTTPS_PROXY/HTTP_PROXY.",
+	);
+	process.exit(1);
 }
 
 if (!res.ok) {
-  const t = await res.text().catch(() => "");
-  console.error(`xAI API error: ${res.status} ${res.statusText}`);
-  console.error(t.slice(0, 4000));
-  process.exit(1);
+	const t = await res.text().catch(() => "");
+	console.error(`xAI API error: ${res.status} ${res.statusText}`);
+	console.error(t.slice(0, 4000));
+	process.exit(1);
 }
 
 const data = await res.json();
 
 // Try to extract the model's text.
 const text =
-  data.output_text ||
-  // xAI responses: output is an array of events; the assistant message is usually later.
-  data?.output
-    ?.flatMap((o) => (Array.isArray(o?.content) ? o.content : []))
-    ?.find((c) => c?.type === "output_text" && typeof c?.text === "string")
-    ?.text ||
-  null;
+	data.output_text ||
+	// xAI responses: output is an array of events; the assistant message is usually later.
+	data?.output
+		?.flatMap((o) => (Array.isArray(o?.content) ? o.content : []))
+		?.find((c) => c?.type === "output_text" && typeof c?.text === "string")
+		?.text ||
+	null;
 
 if (!text) {
-  // fallback: emit whole response
-  if (jsonOut) {
-    console.log(JSON.stringify({ query, mode, raw: data }, null, 2));
-  } else {
-    console.log(JSON.stringify(data, null, 2));
-  }
-  process.exit(0);
+	// fallback: emit whole response
+	if (jsonOut) {
+		console.log(JSON.stringify({ query, mode, raw: data }, null, 2));
+	} else {
+		console.log(JSON.stringify(data, null, 2));
+	}
+	process.exit(0);
 }
 
 function dedupeXCitations(urls) {
-  // Dedupe by tweet id. Prefer canonical /<handle>/status/<id> over /i/status/<id>.
-  function tweetInfo(u) {
-    const m1 = u.match(/https?:\/\/(?:x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)/i);
-    if (m1) return { id: m1[1], kind: "status" };
-    const m2 = u.match(/https?:\/\/(?:x\.com|twitter\.com)\/i\/status\/(\d+)/i);
-    if (m2) return { id: m2[1], kind: "i" };
-    return null;
-  }
+	// Dedupe by tweet id. Prefer canonical /<handle>/status/<id> over /i/status/<id>.
+	function tweetInfo(u) {
+		const m1 = u.match(
+			// oxlint-disable-next-line no-useless-escape
+			/https?:\/\/(?:x\.com|twitter\.com)\/[^\/]+\/status\/(\d+)/i,
+		);
+		if (m1) return { id: m1[1], kind: "status" };
+		const m2 = u.match(/https?:\/\/(?:x\.com|twitter\.com)\/i\/status\/(\d+)/i);
+		if (m2) return { id: m2[1], kind: "i" };
+		return null;
+	}
 
-  // First pass: pick best URL per tweet id (first status wins; else first i/status).
-  const best = new Map(); // id -> { url, kind }
-  for (const u of urls) {
-    const info = tweetInfo(u);
-    if (!info) continue;
-    const cur = best.get(info.id);
-    if (!cur) best.set(info.id, { url: u, kind: info.kind });
-    else if (cur.kind === "i" && info.kind === "status") best.set(info.id, { url: u, kind: info.kind });
-  }
+	// First pass: pick best URL per tweet id (first status wins; else first i/status).
+	const best = new Map(); // id -> { url, kind }
+	for (const u of urls) {
+		const info = tweetInfo(u);
+		if (!info) continue;
+		const cur = best.get(info.id);
+		if (!cur) best.set(info.id, { url: u, kind: info.kind });
+		else if (cur.kind === "i" && info.kind === "status")
+			best.set(info.id, { url: u, kind: info.kind });
+	}
 
-  // Second pass: preserve original order, emit only best url per id.
-  const out = [];
-  const seen = new Set();
-  for (const u of urls) {
-    const info = tweetInfo(u);
-    if (info) {
-      const b = best.get(info.id);
-      if (b?.url === u && !seen.has(b.url)) {
-        out.push(u);
-        seen.add(b.url);
-      }
-      continue;
-    }
+	// Second pass: preserve original order, emit only best url per id.
+	const out = [];
+	const seen = new Set();
+	for (const u of urls) {
+		const info = tweetInfo(u);
+		if (info) {
+			const b = best.get(info.id);
+			if (b?.url === u && !seen.has(b.url)) {
+				out.push(u);
+				seen.add(b.url);
+			}
+			continue;
+		}
 
-    if (!seen.has(u)) {
-      out.push(u);
-      seen.add(u);
-    }
-  }
+		if (!seen.has(u)) {
+			out.push(u);
+			seen.add(u);
+		}
+	}
 
-  return out;
+	return out;
 }
 
 function collectCitations(resp) {
-  const out = new Set();
+	const out = new Set();
 
-  // Some responses include a top-level citations array.
-  if (Array.isArray(resp?.citations)) {
-    for (const u of resp.citations) {
-      if (typeof u === "string" && u) out.add(u);
-    }
-  }
+	// Some responses include a top-level citations array.
+	if (Array.isArray(resp?.citations)) {
+		for (const u of resp.citations) {
+			if (typeof u === "string" && u) out.add(u);
+		}
+	}
 
-  // Annotations inside output_text.
-  if (Array.isArray(resp?.output)) {
-    for (const item of resp.output) {
-      if (!item) continue;
-      const content = Array.isArray(item.content) ? item.content : [];
-      for (const c of content) {
-        const ann = Array.isArray(c?.annotations) ? c.annotations : [];
-        for (const a of ann) {
-          const url = a?.url || a?.web_citation?.url;
-          if (typeof url === "string" && url) out.add(url);
-        }
-      }
-    }
-  }
+	// Annotations inside output_text.
+	if (Array.isArray(resp?.output)) {
+		for (const item of resp.output) {
+			if (!item) continue;
+			const content = Array.isArray(item.content) ? item.content : [];
+			for (const c of content) {
+				const ann = Array.isArray(c?.annotations) ? c.annotations : [];
+				for (const a of ann) {
+					const url = a?.url || a?.web_citation?.url;
+					if (typeof url === "string" && url) out.add(url);
+				}
+			}
+		}
+	}
 
-  // Prefer X links for x_search when available.
-  if (mode === "x") {
-    const xLinks = [...out].filter((u) => /https?:\/\/(x\.com|twitter\.com)\//i.test(u));
-    if (xLinks.length) return dedupeXCitations(xLinks);
-  }
+	// Prefer X links for x_search when available.
+	if (mode === "x") {
+		const xLinks = [...out].filter((u) =>
+			/https?:\/\/(x\.com|twitter\.com)\//i.test(u),
+		);
+		if (xLinks.length) return dedupeXCitations(xLinks);
+	}
 
-  return [...out];
+	return [...out];
 }
 
 function normalizeParsed(parsedObj) {
-  const resultsRaw = Array.isArray(parsedObj?.results) ? parsedObj.results : [];
-  const results = resultsRaw.slice(0, maxResults).map((r) => {
-    const obj = r && typeof r === "object" ? r : {};
-    return {
-      title: obj.title ?? null,
-      url: obj.url ?? null,
-      snippet: obj.snippet ?? null,
-      author: obj.author ?? null,
-      posted_at: obj.posted_at ?? null,
-    };
-  });
+	const resultsRaw = Array.isArray(parsedObj?.results) ? parsedObj.results : [];
+	const results = resultsRaw.slice(0, maxResults).map((r) => {
+		const obj = r && typeof r === "object" ? r : {};
+		return {
+			title: obj.title ?? null,
+			url: obj.url ?? null,
+			snippet: obj.snippet ?? null,
+			author: obj.author ?? null,
+			posted_at: obj.posted_at ?? null,
+		};
+	});
 
-  const citationsRaw = Array.isArray(parsedObj?.citations) ? parsedObj.citations : [];
-  const citationsFromResp = collectCitations(data);
-  let citationsMerged = [...new Set([...citationsRaw, ...citationsFromResp].filter(Boolean))];
+	const citationsRaw = Array.isArray(parsedObj?.citations)
+		? parsedObj.citations
+		: [];
+	const citationsFromResp = collectCitations(data);
+	let citationsMerged = [
+		...new Set([...citationsRaw, ...citationsFromResp].filter(Boolean)),
+	];
 
-  // Prefer citations that correspond to returned results, and cap the list.
-  const resultUrls = results.map((r) => r?.url).filter((u) => typeof u === "string" && u);
+	// Prefer citations that correspond to returned results, and cap the list.
+	const resultUrls = results
+		.map((r) => r?.url)
+		.filter((u) => typeof u === "string" && u);
 
-  if (mode === "x") citationsMerged = dedupeXCitations(citationsMerged);
+	if (mode === "x") citationsMerged = dedupeXCitations(citationsMerged);
 
-  const citations = [];
-  const seen = new Set();
-  for (const u of resultUrls) {
-    if (!seen.has(u)) {
-      citations.push(u);
-      seen.add(u);
-    }
-  }
-  for (const u of citationsMerged) {
-    if (!seen.has(u)) {
-      citations.push(u);
-      seen.add(u);
-    }
-  }
+	const citations = [];
+	const seen = new Set();
+	for (const u of resultUrls) {
+		if (!seen.has(u)) {
+			citations.push(u);
+			seen.add(u);
+		}
+	}
+	for (const u of citationsMerged) {
+		if (!seen.has(u)) {
+			citations.push(u);
+			seen.add(u);
+		}
+	}
 
-  const cap = Math.max(12, maxResults * 3);
-  const capped = citations.slice(0, cap);
+	const cap = Math.max(12, maxResults * 3);
+	const capped = citations.slice(0, cap);
 
-  return {
-    query: parsedObj?.query ?? query,
-    mode: parsedObj?.mode ?? mode,
-    results,
-    citations: capped,
-  };
+	return {
+		query: parsedObj?.query ?? query,
+		mode: parsedObj?.mode ?? mode,
+		results,
+		citations: capped,
+	};
 }
 
 // If the model complied, `text` should be JSON.
 let parsed;
 try {
-  parsed = JSON.parse(text);
+	parsed = JSON.parse(text);
 } catch {
-  parsed = null;
+	parsed = null;
 }
 
 if (jsonOut) {
-  if (parsed) {
-    console.log(JSON.stringify(normalizeParsed(parsed), null, 2));
-  } else {
-    // fallback: pass through
-    console.log(text.trim());
-  }
-  if (rawOut) {
-    console.error("\n--- RAW RESPONSE (debug) ---\n");
-    console.error(JSON.stringify(data, null, 2));
-  }
-  process.exit(0);
+	if (parsed) {
+		console.log(JSON.stringify(normalizeParsed(parsed), null, 2));
+	} else {
+		// fallback: pass through
+		console.log(text.trim());
+	}
+	if (rawOut) {
+		console.error("\n--- RAW RESPONSE (debug) ---\n");
+		console.error(JSON.stringify(data, null, 2));
+	}
+	process.exit(0);
 }
 
 if (!parsed) {
-  console.log(text.trim());
-  if (rawOut) console.error(JSON.stringify(data, null, 2));
-  process.exit(0);
+	console.log(text.trim());
+	if (rawOut) console.error(JSON.stringify(data, null, 2));
+	process.exit(0);
 }
 
 const normalized = normalizeParsed(parsed);
@@ -445,8 +468,8 @@ const citations = normalized.citations;
 const results = normalized.results;
 
 if (format === "links") {
-  for (const c of citations) console.log(c);
-  process.exit(0);
+	for (const c of citations) console.log(c);
+	process.exit(0);
 }
 
 // Pretty, human output for terminal usage.
@@ -456,26 +479,28 @@ lines.push(`Mode: ${normalized.mode}`);
 lines.push("");
 
 if (results.length) {
-  lines.push("Results:");
-  for (const r of results) {
-    const title = r?.title || (r?.author ? String(r.author) : "(no title)");
-    const url = r?.url || "";
-    const snip = r?.snippet || "";
-    const when = r?.posted_at ? `\n  ${r.posted_at}` : "";
-    lines.push(`- ${title}${when}${url ? `\n  ${url}` : ""}${snip ? `\n  ${snip}` : ""}`);
-  }
+	lines.push("Results:");
+	for (const r of results) {
+		const title = r?.title || (r?.author ? String(r.author) : "(no title)");
+		const url = r?.url || "";
+		const snip = r?.snippet || "";
+		const when = r?.posted_at ? `\n  ${r.posted_at}` : "";
+		lines.push(
+			`- ${title}${when}${url ? `\n  ${url}` : ""}${snip ? `\n  ${snip}` : ""}`,
+		);
+	}
 } else {
-  lines.push("Results: (none)");
+	lines.push("Results: (none)");
 }
 
 if (format !== "text" && citations.length) {
-  lines.push("");
-  lines.push("Citations:");
-  for (const c of citations) lines.push(`- ${c}`);
+	lines.push("");
+	lines.push("Citations:");
+	for (const c of citations) lines.push(`- ${c}`);
 }
 
 console.log(lines.join("\n"));
 if (rawOut) {
-  console.error("\n--- RAW RESPONSE (debug) ---\n");
-  console.error(JSON.stringify(data, null, 2));
+	console.error("\n--- RAW RESPONSE (debug) ---\n");
+	console.error(JSON.stringify(data, null, 2));
 }

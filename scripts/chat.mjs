@@ -68,6 +68,15 @@ let jsonOut = false;
 let rawOut = false;
 let images = [];
 let promptParts = [];
+const apiBase = (process.env.XAI_BASE_URL || "https://api.x.ai/v1").replace(
+  /\/+$/,
+  ""
+);
+const timeoutMs = Math.max(
+  1000,
+  Number(process.env.XAI_TIMEOUT_MS || 45000) || 45000
+);
+const maxRetries = Math.max(0, Number(process.env.XAI_RETRIES || 2) || 2);
 
 for (let i = 0; i < args.length; i++) {
   const a = args[i];
@@ -105,14 +114,62 @@ const body = {
   store: false,
 };
 
-const res = await fetch("https://api.x.ai/v1/responses", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify(body),
-});
+function isRetryableNetworkError(err) {
+  const code = err?.cause?.code || err?.code;
+  return ["ECONNRESET", "ETIMEDOUT", "EAI_AGAIN", "ENOTFOUND", "ECONNREFUSED"].includes(
+    code
+  );
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url, init, retries, perTryTimeoutMs) {
+  let lastErr = null;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const signal = AbortSignal.timeout(perTryTimeoutMs);
+      return await fetch(url, { ...init, signal });
+    } catch (err) {
+      lastErr = err;
+      const timedOut = err?.name === "TimeoutError" || err?.name === "AbortError";
+      const shouldRetry = attempt < retries && (timedOut || isRetryableNetworkError(err));
+      if (!shouldRetry) throw err;
+      await sleep(300 * (attempt + 1));
+    }
+  }
+  throw lastErr || new Error("fetch failed");
+}
+
+let res;
+
+try {
+  res = await fetchWithRetry(
+    `${apiBase}/responses`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(body),
+    },
+    maxRetries,
+    timeoutMs
+  );
+} catch (err) {
+  const code = err?.cause?.code || err?.code || "UNKNOWN";
+  console.error(`Network error calling xAI API: ${code} ${err?.message || "fetch failed"}`);
+  console.error(`Target: ${apiBase}/responses`);
+  console.error(
+    "Hint: if direct access to api.x.ai is blocked/reset in your network, use a proxy/VPN, or set XAI_BASE_URL to your reachable gateway."
+  );
+  console.error(
+    "Hint: for env proxy support in Node fetch, set NODE_USE_ENV_PROXY=1 and HTTPS_PROXY/HTTP_PROXY."
+  );
+  process.exit(1);
+}
 
 if (!res.ok) {
   const t = await res.text().catch(() => "");
@@ -122,6 +179,7 @@ if (!res.ok) {
 }
 
 const data = await res.json();
+
 const text =
   data.output_text ||
   data?.output
